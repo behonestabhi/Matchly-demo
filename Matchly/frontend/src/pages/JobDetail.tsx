@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card } from '../components/Card';
 
 export function JobDetail() {
   const { id } = useParams();
+  const [applied, setApplied] = useState(false);
 
   const jobs = [
     {
@@ -58,6 +60,9 @@ export function JobDetail() {
     return (
       <div className="max-w-3xl">
         <h1 className="text-2xl font-semibold">Job Not Found</h1>
+        <Link to="/jobs" className="text-brand-600 hover:underline">
+          Back to Jobs
+        </Link>
       </div>
     );
   }
@@ -69,16 +74,30 @@ export function JobDetail() {
       </Link>
 
       <div className="mt-4">
-        <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {job.title}
+        </h1>
 
         <div className="mt-2 flex gap-3 text-sm text-gray-500">
           <span>{job.location}</span>
           <span>{job.status}</span>
         </div>
 
-        <button className="btn-primary mt-4">
-          Apply Now
-        </button>
+        <div className="mt-4">
+          <button
+            className="btn-primary"
+            onClick={() => setApplied(true)}
+            disabled={applied}
+          >
+            {applied ? 'Application Submitted ✓' : 'Apply Now'}
+          </button>
+
+          {applied && (
+            <p className="mt-2 text-sm text-green-600">
+              Your application has been submitted successfully.
+            </p>
+          )}
+        </div>
       </div>
 
       <Card className="mt-6">
