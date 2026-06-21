@@ -1,0 +1,15 @@
+# Overrides applied when SPRING_PROFILES_ACTIVE=docker.
+# Inside the compose network everything is reachable by service name.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/matching_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+matchly:
+  services:
+    candidate-url: ${CANDIDATE_SERVICE_URL:http://candidate-service:8082}
+    job-url: ${JOB_SERVICE_URL:http://job-service:8083}
+    ai-url: ${AI_SERVICE_URL:http://ai-service:8000}

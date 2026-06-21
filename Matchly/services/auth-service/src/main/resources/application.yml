@@ -1,0 +1,52 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # Flyway fully owns the schema (incl. the CITEXT email column, which
+      # Hibernate's validator does not recognize), so leave DDL to Flyway.
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# JWT configuration — all env-overridable.
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-long-random-secret-at-least-32-chars}
+  access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:900}
+  refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:1209600}
+  issuer: matchly-auth
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    org.flywaydb: info

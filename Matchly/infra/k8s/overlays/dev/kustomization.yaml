@@ -1,0 +1,75 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# DEV overlay: 1 replica everywhere, small resources, in-cluster backing infra.
+# Apply with:  kubectl apply -k infra/k8s/overlays/dev
+
+namespace: matchly
+
+resources:
+  - ../../base
+  - ../../base/infra-dev   # dev-only Postgres/Redis/Kafka
+
+# All app images get the :dev tag in dev clusters.
+images:
+  - name: matchly/api-gateway
+    newTag: dev
+  - name: matchly/auth-service
+    newTag: dev
+  - name: matchly/candidate-service
+    newTag: dev
+  - name: matchly/job-service
+    newTag: dev
+  - name: matchly/application-service
+    newTag: dev
+  - name: matchly/matching-service
+    newTag: dev
+  - name: matchly/interview-service
+    newTag: dev
+  - name: matchly/analytics-service
+    newTag: dev
+  - name: matchly/ai-service
+    newTag: dev
+  - name: matchly/frontend
+    newTag: dev
+
+# Profile override for in-cluster dev.
+configMapGenerator:
+  - name: matchly-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=k8s-dev
+
+patches:
+  # Pin every app Deployment to a single replica.
+  - target:
+      kind: Deployment
+      name: ".*"
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Shrink the load-sensitive deployments' resource requests for dev.
+  - target:
+      kind: Deployment
+      name: (api-gateway|matching-service|ai-service)
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 75m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 256Mi
+
+  # HPAs are noise in dev — clamp them to a single replica.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: ".*"
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2

@@ -1,0 +1,7 @@
+# Overrides applied when SPRING_PROFILES_ACTIVE=docker.
+# Inside the compose network Postgres is reachable at host `postgres`.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}

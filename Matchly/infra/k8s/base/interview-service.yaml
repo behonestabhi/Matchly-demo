@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interview-service
+  namespace: matchly
+  labels:
+    app.kubernetes.io/name: interview-service
+    app.kubernetes.io/part-of: matchly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: interview-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: interview-service
+        app.kubernetes.io/part-of: matchly
+    spec:
+      containers:
+        - name: interview-service
+          image: matchly/interview-service:latest
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: matchly-config
+            - secretRef:
+                name: matchly-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/interview_db
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: interview-service
+  namespace: matchly
+  labels:
+    app.kubernetes.io/name: interview-service
+    app.kubernetes.io/part-of: matchly
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: interview-service
+  ports:
+    - name: http
+      port: 8086
+      targetPort: 8086

@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: matchly-ingress
+  namespace: matchly
+  labels:
+    app.kubernetes.io/part-of: matchly
+  # NOTE: annotations are ingress-controller specific. The example below targets
+  # the NGINX ingress controller. On AWS EKS you would typically swap to the
+  # AWS Load Balancer Controller (ingressClassName: alb + alb.* annotations).
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # API traffic -> gateway (handles JWT, routing to downstream services)
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+          # Spring Actuator on the gateway (optional, for probes/monitoring)
+          - path: /actuator
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+          # Everything else -> SPA frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

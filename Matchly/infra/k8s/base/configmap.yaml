@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matchly-config
+  namespace: matchly
+  labels:
+    app.kubernetes.io/part-of: matchly
+# Shared, NON-SECRET environment for all components.
+# Hostnames assume in-cluster services (see infra-dev/ for dev backing infra,
+# or point these at managed AWS endpoints — MSK / ElastiCache / RDS — in prod).
+data:
+  SPRING_PROFILES_ACTIVE: "k8s"
+
+  # --- Kafka ---
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  # --- Redis (used by api-gateway, matching-service, job-service) ---
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # --- Inter-service base URLs (ClusterIP DNS names) ---
+  AUTH_SERVICE_URL: "http://auth-service:8081"
+  CANDIDATE_SERVICE_URL: "http://candidate-service:8082"
+  JOB_SERVICE_URL: "http://job-service:8083"
+  APPLICATION_SERVICE_URL: "http://application-service:8084"
+  MATCHING_SERVICE_URL: "http://matching-service:8085"
+  INTERVIEW_SERVICE_URL: "http://interview-service:8086"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:8087"
+  AI_SERVICE_URL: "http://ai-service:8000"
+
+  # --- AI service tunables (non-secret) ---
+  EMBEDDING_MODEL: "BAAI/bge-small-en-v1.5"
+  LLM_PROVIDER: "template"

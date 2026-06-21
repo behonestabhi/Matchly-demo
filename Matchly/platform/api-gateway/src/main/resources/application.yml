@@ -1,0 +1,97 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  # Reactive Redis — used by the RequestRateLimiter. Degrades gracefully if
+  # rate limiting is disabled (see gateway.rate-limit.enabled below).
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+
+  cloud:
+    gateway:
+      # Routing is by path prefix, with NO rewrite — services own the full
+      # /api/v1/... path (see CONVENTIONS.md "API paths").
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: candidate-service
+          uri: ${CANDIDATE_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/candidates/**,/api/v1/resumes/**
+
+        - id: job-service
+          uri: ${JOB_SERVICE_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/jobs/**
+
+        - id: application-service
+          uri: ${APPLICATION_SERVICE_URI:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/applications/**
+
+        - id: matching-service
+          uri: ${MATCHING_SERVICE_URI:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/matching/**
+
+        - id: interview-service
+          uri: ${INTERVIEW_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/interviews/**
+
+        - id: analytics-service
+          uri: ${ANALYTICS_SERVICE_URI:http://localhost:8087}
+          predicates:
+            - Path=/api/v1/analytics/**
+
+      # Global CORS handled by Spring Cloud Gateway.
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:8088,http://localhost:5173}
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+# Custom gateway settings consumed by GatewayProperties / filters.
+gateway:
+  jwt:
+    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-at-least-32-chars}
+    issuer: matchly-auth
+  # Public (no-auth) path prefixes. Everything else requires a valid JWT.
+  public-paths:
+    - /api/v1/auth/
+    - /actuator/
+    - /swagger-ui
+    - /v3/api-docs
+  rate-limit:
+    # Off by default so the gateway runs without Redis. Enable with the
+    # `ratelimit` profile (or set gateway.rate-limit.enabled=true) when Redis
+    # is available.
+    enabled: ${RATE_LIMIT_ENABLED:false}
+    replenish-rate: ${RATE_LIMIT_REPLENISH:10}
+    burst-capacity: ${RATE_LIMIT_BURST:20}
+    requested-tokens: 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    org.springframework.cloud.gateway: info

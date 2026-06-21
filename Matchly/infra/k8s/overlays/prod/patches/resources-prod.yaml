@@ -1,0 +1,51 @@
+# Strategic-merge resource bumps for the load-sensitive prod components.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  template:
+    spec:
+      containers:
+        - name: api-gateway
+          resources:
+            requests:
+              cpu: 300m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: matching-service
+          resources:
+            requests:
+              cpu: 300m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: ai-service
+          resources:
+            requests:
+              cpu: 500m
+              memory: "1536Mi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"

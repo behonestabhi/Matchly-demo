@@ -1,0 +1,12 @@
+# Overrides applied when SPRING_PROFILES_ACTIVE=docker.
+# Inside the compose network Postgres/Kafka are reachable at hosts `postgres` / `kafka`.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/job_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+ai:
+  service-url: ${AI_SERVICE_URL:http://ai-service:8000}

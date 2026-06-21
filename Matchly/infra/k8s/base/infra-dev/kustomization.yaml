@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# DEV-ONLY backing infra (Postgres + pgvector, Redis, KRaft Kafka).
+# Referenced by overlays/dev only. Single-replica, ephemeral, NOT production
+# grade. Production uses managed AWS (RDS / ElastiCache / MSK) via Terraform.
+
+namespace: matchly
+
+resources:
+  - postgres.yaml
+  - redis.yaml
+  - kafka.yaml

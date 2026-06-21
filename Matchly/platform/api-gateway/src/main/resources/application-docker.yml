@@ -1,0 +1,38 @@
+# Overrides applied when SPRING_PROFILES_ACTIVE=docker.
+# Inside the compose network, each service is reachable by its compose name.
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://auth-service:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: candidate-service
+          uri: ${CANDIDATE_SERVICE_URI:http://candidate-service:8082}
+          predicates:
+            - Path=/api/v1/candidates/**,/api/v1/resumes/**
+        - id: job-service
+          uri: ${JOB_SERVICE_URI:http://job-service:8083}
+          predicates:
+            - Path=/api/v1/jobs/**
+        - id: application-service
+          uri: ${APPLICATION_SERVICE_URI:http://application-service:8084}
+          predicates:
+            - Path=/api/v1/applications/**
+        - id: matching-service
+          uri: ${MATCHING_SERVICE_URI:http://matching-service:8085}
+          predicates:
+            - Path=/api/v1/matching/**
+        - id: interview-service
+          uri: ${INTERVIEW_SERVICE_URI:http://interview-service:8086}
+          predicates:
+            - Path=/api/v1/interviews/**
+        - id: analytics-service
+          uri: ${ANALYTICS_SERVICE_URI:http://analytics-service:8087}
+          predicates:
+            - Path=/api/v1/analytics/**

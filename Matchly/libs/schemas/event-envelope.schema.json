@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://matchly.dev/schemas/event-envelope.schema.json",
+  "title": "EventEnvelope",
+  "description": "Common envelope wrapping every domain event on Kafka.",
+  "type": "object",
+  "required": ["eventId", "eventType", "occurredAt", "version", "payload"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid", "description": "Idempotency/dedup key." },
+    "eventType": { "type": "string", "examples": ["ResumeUploaded", "ResumeParsed", "JobPosted", "ApplicationSubmitted", "StageChanged", "MatchScored", "QuestionsGenerated"] },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "correlationId": { "type": "string", "format": "uuid", "description": "Propagated from the gateway for end-to-end tracing." },
+    "version": { "type": "integer", "minimum": 1 },
+    "payload": { "type": "object", "description": "Event-type-specific body." }
+  }
+}

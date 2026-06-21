@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base manifests for the Matchly platform (10 app components + shared config).
+# Backing infra (PostgreSQL/Redis/Kafka) is NOT in base — prod uses managed AWS
+# (see infra/terraform). The dev overlay layers in base/infra-dev for a
+# self-contained cluster. STARTER manifests — review before production use.
+
+namespace: matchly
+
+commonLabels:
+  app.kubernetes.io/part-of: matchly
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  # --- App components ---
+  - api-gateway.yaml
+  - auth-service.yaml
+  - candidate-service.yaml
+  - job-service.yaml
+  - application-service.yaml
+  - matching-service.yaml
+  - interview-service.yaml
+  - analytics-service.yaml
+  - ai-service.yaml
+  - frontend.yaml
+  # --- Edge + scaling ---
+  - ingress.yaml
+  - hpa.yaml

@@ -1,0 +1,68 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: analytics-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/analytics_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # Flyway fully owns the schema; leave DDL to Flyway.
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:analytics-service}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # ErrorHandlingDeserializer wraps the JSON deserializer so a poison message
+      # does not stall the partition; the envelope is decoded into a JsonNode.
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        # Producers send no __TypeId__ header, so always deserialize to our common
+        # envelope; its `payload` field is a JsonNode read by each listener.
+        spring.json.value.default.type: com.matchly.analytics.events.EventEnvelope
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: "com.matchly.analytics.events"
+
+# Topics consumed (env-overridable).
+matchly:
+  topics:
+    application-events: ${TOPIC_APPLICATION_EVENTS:application.events}
+    matching-events: ${TOPIC_MATCHING_EVENTS:matching.events}
+    job-events: ${TOPIC_JOB_EVENTS:job.events}
+    interview-events: ${TOPIC_INTERVIEW_EVENTS:interview.events}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    org.flywaydb: info

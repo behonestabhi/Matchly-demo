@@ -1,0 +1,20 @@
+# Overrides applied when SPRING_PROFILES_ACTIVE=docker.
+# Inside the compose network infra is reachable by service/host name.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/interview_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://ai-service:8000}
+
+candidate:
+  service:
+    url: ${CANDIDATE_SERVICE_URL:http://candidate-service:8082}
+job:
+  service:
+    url: ${JOB_SERVICE_URL:http://job-service:8083}

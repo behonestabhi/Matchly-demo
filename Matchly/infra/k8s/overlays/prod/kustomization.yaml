@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# PROD overlay: 2-3 replicas, larger resources, NO in-cluster backing infra.
+# PostgreSQL/Redis/Kafka are managed AWS (RDS / ElastiCache / MSK) — point the
+# ConfigMap host values at those endpoints before applying.
+# Apply with:  kubectl apply -k infra/k8s/overlays/prod
+#
+# Pin a real release tag instead of the placeholder below before deploying.
+
+namespace: matchly
+
+resources:
+  - ../../base
+
+# Pin all images to an immutable release tag (replace v1.0.0 per release).
+images:
+  - name: matchly/api-gateway
+    newTag: v1.0.0
+  - name: matchly/auth-service
+    newTag: v1.0.0
+  - name: matchly/candidate-service
+    newTag: v1.0.0
+  - name: matchly/job-service
+    newTag: v1.0.0
+  - name: matchly/application-service
+    newTag: v1.0.0
+  - name: matchly/matching-service
+    newTag: v1.0.0
+  - name: matchly/interview-service
+    newTag: v1.0.0
+  - name: matchly/analytics-service
+    newTag: v1.0.0
+  - name: matchly/ai-service
+    newTag: v1.0.0
+  - name: matchly/frontend
+    newTag: v1.0.0
+
+configMapGenerator:
+  - name: matchly-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=k8s-prod
+      # Override these with the real managed-AWS endpoints.
+      - KAFKA_BOOTSTRAP_SERVERS=REPLACE_WITH_MSK_BOOTSTRAP_BROKERS
+      - REDIS_HOST=REPLACE_WITH_ELASTICACHE_PRIMARY_ENDPOINT
+
+patches:
+  # Baseline: 2 replicas for the stateless app deployments.
+  - target:
+      kind: Deployment
+      name: (auth-service|candidate-service|job-service|application-service|interview-service|analytics-service|frontend)
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # Load-sensitive services start at 3 replicas (HPA scales above this).
+  - target:
+      kind: Deployment
+      name: (api-gateway|matching-service|ai-service)
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+
+  # Larger resources for the heavy / hot-path components.
+  - path: patches/resources-prod.yaml

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: matchly
+  labels:
+    app.kubernetes.io/name: ai-service
+    app.kubernetes.io/part-of: matchly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-service
+        app.kubernetes.io/part-of: matchly
+    spec:
+      containers:
+        - name: ai-service
+          image: matchly/ai-service:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: matchly-config
+            - secretRef:
+                name: matchly-secrets
+          env:
+            # DATABASE_URL composed from the placeholder secret creds.
+            # Points at the ai_db database (pgvector) on the shared Postgres.
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/ai_db
+          readinessProbe:
+            httpGet:
+              path: /internal/health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /internal/health
+              port: 8000
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: matchly
+  labels:
+    app.kubernetes.io/name: ai-service
+    app.kubernetes.io/part-of: matchly
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ai-service
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

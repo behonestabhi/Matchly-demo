@@ -1,0 +1,74 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: matching-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/matching_db}
+    username: ${SPRING_DATASOURCE_USERNAME:matchly}
+    password: ${SPRING_DATASOURCE_PASSWORD:matchly}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # Flyway fully owns the schema.
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:matching-service}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+
+# Matching-specific config — all env-overridable.
+matchly:
+  kafka:
+    topics:
+      application-events: ${KAFKA_TOPIC_APPLICATION_EVENTS:application.events}
+      matching-events: ${KAFKA_TOPIC_MATCHING_EVENTS:matching.events}
+  services:
+    candidate-url: ${CANDIDATE_SERVICE_URL:http://localhost:8082}
+    job-url: ${JOB_SERVICE_URL:http://localhost:8083}
+    ai-url: ${AI_SERVICE_URL:http://localhost:8000}
+  http:
+    connect-timeout-ms: ${HTTP_CONNECT_TIMEOUT_MS:2000}
+    read-timeout-ms: ${HTTP_READ_TIMEOUT_MS:5000}
+  scoring:
+    # Default model version recorded with computed scores.
+    model-version: ${MATCH_MODEL_VERSION:match-v1.0}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    org.flywaydb: info
