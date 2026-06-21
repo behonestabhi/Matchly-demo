@@ -1,30 +1,93 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { jobApi, type JobListParams } from '../api/client';
-import { useAsync } from '../hooks/useAsync';
 import { Card } from '../components/Card';
 import { Pill } from '../components/Badge';
-import { Spinner } from '../components/Spinner';
-import { ErrorMessage } from '../components/ErrorMessage';
 
 export function Jobs() {
-  const [params, setParams] = useState<JobListParams>({ page: 0, size: 20 });
   const [q, setQ] = useState('');
   const [location, setLocation] = useState('');
 
-  const { data, loading, error } = useAsync(
-    () => jobApi.list(params),
-    [params.q, params.location, params.page, params.size],
-  );
+  const jobs = [
+    {
+      id: 1,
+      title: 'Senior Python Developer',
+      location: 'Remote',
+      description:
+        'Build scalable AI-powered recruitment systems using FastAPI, PostgreSQL, and AWS.',
+      status: 'OPEN',
+      requiredSkills: [
+        { skillName: 'Python' },
+        { skillName: 'FastAPI' },
+        { skillName: 'AWS' },
+      ],
+    },
+    {
+      id: 2,
+      title: 'Machine Learning Engineer',
+      location: 'Bangalore',
+      description:
+        'Develop candidate matching algorithms using NLP, embeddings, and LLMs.',
+      status: 'OPEN',
+      requiredSkills: [
+        { skillName: 'PyTorch' },
+        { skillName: 'LLM' },
+        { skillName: 'NLP' },
+      ],
+    },
+    {
+      id: 3,
+      title: 'Frontend React Developer',
+      location: 'Remote',
+      description:
+        'Build modern recruiter dashboards using React, TypeScript, and Tailwind.',
+      status: 'OPEN',
+      requiredSkills: [
+        { skillName: 'React' },
+        { skillName: 'TypeScript' },
+        { skillName: 'Tailwind' },
+      ],
+    },
+    {
+      id: 4,
+      title: 'Data Engineer',
+      location: 'Mumbai',
+      description:
+        'Design ETL pipelines, optimize data warehouses, and work with cloud platforms.',
+      status: 'OPEN',
+      requiredSkills: [
+        { skillName: 'Python' },
+        { skillName: 'SQL' },
+        { skillName: 'AWS' },
+      ],
+    },
+    {
+      id: 5,
+      title: 'AI Product Manager',
+      location: 'Remote',
+      description:
+        'Lead AI-powered hiring solutions and collaborate with engineering teams.',
+      status: 'OPEN',
+      requiredSkills: [
+        { skillName: 'Product Management' },
+        { skillName: 'AI' },
+        { skillName: 'Analytics' },
+      ],
+    },
+  ];
+
+  const [filteredJobs, setFilteredJobs] = useState(jobs);
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault();
-    setParams((p) => ({
-      ...p,
-      q: q || undefined,
-      location: location || undefined,
-      page: 0,
-    }));
+
+    const filtered = jobs.filter(
+      (job) =>
+        job.title.toLowerCase().includes(q.toLowerCase()) &&
+        (location === '' ||
+          job.location.toLowerCase().includes(location.toLowerCase()))
+    );
+
+    setFilteredJobs(filtered);
   };
 
   return (
@@ -54,6 +117,7 @@ export function Jobs() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
+
         <div className="min-w-[160px]">
           <label className="label" htmlFor="loc">
             Location
@@ -66,80 +130,46 @@ export function Jobs() {
             onChange={(e) => setLocation(e.target.value)}
           />
         </div>
+
         <button type="submit" className="btn-primary">
           Search
         </button>
       </form>
 
-      {loading && <Spinner label="Loading jobs…" />}
-      {error != null && <ErrorMessage error={error} />}
+      {filteredJobs.length === 0 ? (
+        <Card>
+          <p className="text-sm text-gray-500">No jobs found.</p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {filteredJobs.map((job) => (
+            <Link key={job.id} to={`/jobs/${job.id}`} className="group">
+              <Card className="h-full transition group-hover:border-brand-300 group-hover:shadow-md">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="font-semibold text-gray-900 group-hover:text-brand-700">
+                    {job.title}
+                  </h2>
 
-      {data && (
-        <>
-          {data.content.length === 0 ? (
-            <Card>
-              <p className="text-sm text-gray-500">No jobs found.</p>
-            </Card>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {data.content.map((job) => (
-                <Link key={job.id} to={`/jobs/${job.id}`} className="group">
-                  <Card className="h-full transition group-hover:border-brand-300 group-hover:shadow-md">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-semibold text-gray-900 group-hover:text-brand-700">
-                        {job.title}
-                      </h2>
-                      {job.status && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                          {job.status}
-                        </span>
-                      )}
-                    </div>
-                    {job.location && (
-                      <p className="mt-1 text-sm text-gray-500">{job.location}</p>
-                    )}
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                      {job.description}
-                    </p>
-                    {job.requiredSkills && job.requiredSkills.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {job.requiredSkills.slice(0, 5).map((s) => (
-                          <Pill key={s.skillName}>{s.skillName}</Pill>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    {job.status}
+                  </span>
+                </div>
 
-          {data.page.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <button
-                className="btn-secondary"
-                disabled={data.page.number <= 0}
-                onClick={() =>
-                  setParams((p) => ({ ...p, page: (p.page ?? 0) - 1 }))
-                }
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-500">
-                Page {data.page.number + 1} of {data.page.totalPages}
-              </span>
-              <button
-                className="btn-secondary"
-                disabled={data.page.number + 1 >= data.page.totalPages}
-                onClick={() =>
-                  setParams((p) => ({ ...p, page: (p.page ?? 0) + 1 }))
-                }
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
+                <p className="mt-1 text-sm text-gray-500">{job.location}</p>
+
+                <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                  {job.description}
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {job.requiredSkills.map((s) => (
+                    <Pill key={s.skillName}>{s.skillName}</Pill>
+                  ))}
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );
