@@ -1,45 +1,66 @@
-import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { applicationApi, jobApi, ApiError } from '../api/client';
-import { useAsync } from '../hooks/useAsync';
-import { useAuth } from '../auth/AuthContext';
 import { Card } from '../components/Card';
-import { Spinner } from '../components/Spinner';
-import { ErrorMessage } from '../components/ErrorMessage';
 
 export function JobDetail() {
-  const { id = '' } = useParams();
-  const { hasRole } = useAuth();
-  const { data: job, loading, error } = useAsync(() => jobApi.get(id), [id]);
+  const { id } = useParams();
 
-  const isCandidate = hasRole('CANDIDATE');
-  const isRecruiter = hasRole('RECRUITER', 'HIRING_MANAGER', 'ADMIN');
+  const jobs = [
+    {
+      id: '1',
+      title: 'Senior Python Developer',
+      location: 'Remote',
+      status: 'OPEN',
+      description:
+        'Build scalable AI-powered recruitment systems using FastAPI, PostgreSQL, AWS, and modern cloud-native architectures.',
+      requiredSkills: ['Python', 'FastAPI', 'AWS'],
+    },
+    {
+      id: '2',
+      title: 'Machine Learning Engineer',
+      location: 'Bangalore',
+      status: 'OPEN',
+      description:
+        'Develop candidate matching algorithms using NLP, embeddings, vector databases, and LLMs.',
+      requiredSkills: ['PyTorch', 'NLP', 'LLM'],
+    },
+    {
+      id: '3',
+      title: 'Frontend React Developer',
+      location: 'Remote',
+      status: 'OPEN',
+      description:
+        'Build modern recruiter dashboards using React, TypeScript, and Tailwind CSS.',
+      requiredSkills: ['React', 'TypeScript', 'Tailwind'],
+    },
+    {
+      id: '4',
+      title: 'Data Engineer',
+      location: 'Mumbai',
+      status: 'OPEN',
+      description:
+        'Design ETL pipelines, optimize data warehouses, and work with cloud platforms.',
+      requiredSkills: ['Python', 'SQL', 'AWS'],
+    },
+    {
+      id: '5',
+      title: 'AI Product Manager',
+      location: 'Remote',
+      status: 'OPEN',
+      description:
+        'Lead AI-powered hiring solutions and collaborate closely with engineering teams.',
+      requiredSkills: ['Product Management', 'AI', 'Analytics'],
+    },
+  ];
 
-  const [applyState, setApplyState] = useState<
-    'idle' | 'applying' | 'done' | 'error'
-  >('idle');
-  const [applyError, setApplyError] = useState<unknown>(null);
+  const job = jobs.find((j) => j.id === id);
 
-  const apply = async () => {
-    setApplyState('applying');
-    setApplyError(null);
-    try {
-      await applicationApi.apply({ jobId: id });
-      setApplyState('done');
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        // Already applied — treat as success-ish.
-        setApplyState('done');
-      } else {
-        setApplyError(err);
-        setApplyState('error');
-      }
-    }
-  };
-
-  if (loading) return <Spinner label="Loading job…" />;
-  if (error != null) return <ErrorMessage error={error} />;
-  if (!job) return null;
+  if (!job) {
+    return (
+      <div className="max-w-3xl">
+        <h1 className="text-2xl font-semibold">Job Not Found</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl">
@@ -47,104 +68,45 @@ export function JobDetail() {
         ← Back to jobs
       </Link>
 
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{job.title}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-            {job.location && <span>{job.location}</span>}
-            {job.status && (
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
-                {job.status}
-              </span>
-            )}
-            {(job.minExpYrs != null || job.maxExpYrs != null) && (
-              <span>
-                {job.minExpYrs ?? 0}–{job.maxExpYrs ?? '∞'} yrs experience
-              </span>
-            )}
-            {job.educationLevel && <span>{job.educationLevel}</span>}
-          </div>
+      <div className="mt-4">
+        <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
+
+        <div className="mt-2 flex gap-3 text-sm text-gray-500">
+          <span>{job.location}</span>
+          <span>{job.status}</span>
         </div>
 
-        {isCandidate && (
-          <div className="text-right">
-            <button
-              className="btn-primary"
-              disabled={applyState === 'applying' || applyState === 'done'}
-              onClick={apply}
-            >
-              {applyState === 'done'
-                ? 'Applied ✓'
-                : applyState === 'applying'
-                  ? 'Applying…'
-                  : 'Apply'}
-            </button>
-            <div className="mt-2">
-              <Link
-                to={`/candidate?skillGapJob=${job.id}`}
-                className="text-xs text-brand-600 hover:underline"
-              >
-                Check my skill gap
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {isRecruiter && (
-          <div className="flex flex-col items-end gap-2 text-sm">
-            <Link
-              to={`/recruiter/jobs/${job.id}/candidates`}
-              className="text-brand-600 hover:underline"
-            >
-              Ranked candidates →
-            </Link>
-            <Link
-              to={`/recruiter/jobs/${job.id}/pipeline`}
-              className="text-brand-600 hover:underline"
-            >
-              Pipeline board →
-            </Link>
-          </div>
-        )}
+        <button className="btn-primary mt-4">
+          Apply Now
+        </button>
       </div>
-
-      {applyState === 'error' && (
-        <div className="mt-4">
-          <ErrorMessage error={applyError} />
-        </div>
-      )}
 
       <Card className="mt-6">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
           Description
         </h2>
-        <p className="whitespace-pre-line text-sm text-gray-700">
+
+        <p className="text-sm text-gray-700">
           {job.description}
         </p>
       </Card>
 
-      {job.requiredSkills && job.requiredSkills.length > 0 && (
-        <Card className="mt-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">
-            Required skills
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {job.requiredSkills.map((s) => (
-              <span
-                key={s.skillName}
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  s.required
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {s.skillName}
-                {s.required && <span className="text-[10px]">required</span>}
-              </span>
-            ))}
-          </div>
-        </Card>
-      )}
+      <Card className="mt-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">
+          Required Skills
+        </h2>
+
+        <div className="flex flex-wrap gap-2">
+          {job.requiredSkills.map((skill) => (
+            <span
+              key={skill}
+              className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
